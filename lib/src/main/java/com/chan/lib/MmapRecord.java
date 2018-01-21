@@ -5,5 +5,9 @@ package com.chan.lib;
  */
 
 public class MmapRecord {
-	public native void init();
+	static {
+		System.loadLibrary("mmap-record");
+	}
+
+	public native int init();
 }
