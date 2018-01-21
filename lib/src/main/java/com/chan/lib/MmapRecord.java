@@ -9,5 +9,9 @@ public class MmapRecord {
 		System.loadLibrary("mmap-record");
 	}
 
-	public native int init();
+	public MmapRecord(String path) {
+		init(path);
+	}
+
+	private native int init(String path);
 }

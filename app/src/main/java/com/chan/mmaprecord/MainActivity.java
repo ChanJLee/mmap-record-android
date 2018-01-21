@@ -6,6 +6,8 @@ import android.widget.TextView;
 
 import com.chan.lib.MmapRecord;
 
+import java.io.File;
+
 public class MainActivity extends AppCompatActivity {
 
 	@Override
@@ -14,7 +16,10 @@ public class MainActivity extends AppCompatActivity {
 		setContentView(R.layout.activity_main);
 
 		TextView textView = findViewById(R.id.sample_text);
-		MmapRecord mmapRecord = new MmapRecord();
-		textView.setText("" + mmapRecord.init());
+		File dir = getDir("sd", MODE_PRIVATE);
+		if (!dir.exists()) {
+			dir.mkdirs();
+		}
+		MmapRecord mmapRecord = new MmapRecord(new File(dir, "x.log").getAbsolutePath());
 	}
 }
