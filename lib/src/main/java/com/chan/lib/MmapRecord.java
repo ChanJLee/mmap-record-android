@@ -5,13 +5,21 @@ package com.chan.lib;
  */
 
 public class MmapRecord {
+	private long mBufferInfoReference;
+
 	static {
 		System.loadLibrary("mmap-record");
 	}
 
-	public MmapRecord(String path) {
-		init(path);
+	public MmapRecord(String path, String log) {
+		init(path, log);
 	}
 
-	private native int init(String path);
+	public void release() {
+		release(mBufferInfoReference);
+	}
+
+	private native int init(String path, String log);
+
+	private native void release(long reference);
 }
