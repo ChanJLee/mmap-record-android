@@ -15,11 +15,11 @@ public class MmapRecord {
 		init(path, log);
 	}
 
-	public void release() {
-		release(mBufferInfoReference);
-	}
-
 	private native int init(String path, String log);
 
-	private native void release(long reference);
+	public native void release();
+
+	public native void save(String json);
+
+	public native String read();
 }

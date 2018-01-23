@@ -5,6 +5,10 @@
 #ifndef MMAPRECORD_JSTRINGHOLDER_H
 #define MMAPRECORD_JSTRINGHOLDER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <jni.h>
 
 class JStringHolder {
@@ -14,7 +18,7 @@ private:
     const char *mCString;
 
 public:
-    JStringHolder(JNIEnv &mEnv, jstring mJString) : mEnv(mEnv), mJString(mJString) {
+    JStringHolder(JNIEnv &env, jstring jstr) : mEnv(env), mJString(jstr) {
         mCString = mEnv.GetStringUTFChars(mJString, 0);
     }
 
@@ -26,5 +30,10 @@ public:
         return mCString;
     }
 };
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif //MMAPRECORD_JSTRINGHOLDER_H

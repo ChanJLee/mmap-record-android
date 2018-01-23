@@ -4,6 +4,7 @@
 # Sets the minimum version of CMake required to build the native library.
 
 cmake_minimum_required(VERSION 3.4.1)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -std=c99")
 
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
@@ -18,6 +19,9 @@ add_library( # Sets the name of the library.
 
              # Provides a relative path to your source file(s).
              src/main/cpp/mmaprecord.cpp
+             src/main/cpp/mmaprecord.h
+             src/main/cpp/log.h
+             src/main/cpp/jstringholder.h
 )
 
 # Searches for a specified prebuilt library and stores the path as a

@@ -1,16 +1,25 @@
+
 #include "mmaprecord.h"
-#include "jstringholder.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#include "mmaprecord.h"
+#include "jstringholder.h"
+
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sstream>
 #include <sys/mman.h>
+#include <string>
 #include "log.h"
 
+mmap_info *get_mmap_info(JNIEnv *env, jobject object) {
+    jclass mmap_record_clazz = env->GetObjectClass(object);
+    jfieldID reference_id = env->GetFieldID(mmap_record_clazz, "mBufferInfoReference", "L");
+    return static_cast<mmap_info *>(env->GetLongField(object, reference_id));
+}
 
 JNIEXPORT jint JNICALL
 Java_com_chan_lib_MmapRecord_init(JNIEnv *env, jobject instance, jstring buffer, jstring log) {
@@ -74,8 +83,8 @@ Java_com_chan_lib_MmapRecord_init(JNIEnv *env, jobject instance, jstring buffer,
 
 
 JNIEXPORT void JNICALL
-Java_com_chan_lib_MmapRecord_void(JNIEnv *env, jobject instance, jlong mmap_info_reference) {
-    mmap_info *info = static_cast<mmap_info *>(mmap_info_reference);
+Java_com_chan_lib_MmapRecord_release(JNIEnv *env, jobject instance) {
+    mmap_info *info = get_mmap_info(env, instance);
     if (info == nullptr) {
         return;
     }
@@ -83,6 +92,37 @@ Java_com_chan_lib_MmapRecord_void(JNIEnv *env, jobject instance, jlong mmap_info
     close(info->buffer_fd);
     close(info->log_fd);
 }
+
+JNIEXPORT void JNICALL
+Java_com_chan_lib_MmapRecord_save(JNIEnv *env, jobject object, jstring json) {
+    mmap_info *info = get_mmap_info(env, object);
+    if (info == nullptr) {
+        return;
+    }
+
+    JStringHolder json_holder(*env, json);
+    const char *c_json = json_holder.getCString();
+    size_t c_json_len = strlen(c_json);
+    if (c_json_len >= info->buffer_size) {
+        // TODO
+        LOGD("json too long");
+        return;
+    }
+
+    info->used_size = c_json_len;
+    memcpy(info->buffer, c_json, c_json_len);
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_chan_lib_MmapRecord_read(JNIEnv *env, jobject instance) {
+    mmap_info *info = get_mmap_info(env, instance);
+    if (info == nullptr || info->used_size <= 0) {
+        return nullptr;
+    }
+
+    return env->NewStringUTF(info->buffer);
+}
+
 
 #ifdef __cplusplus
 }
