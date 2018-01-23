@@ -14,7 +14,7 @@ extern "C" {
 class JStringHolder {
 private:
     JNIEnv &mEnv;
-    jstring &mJString;
+    jstring mJString;
     const char *mCString;
 
 public:

@@ -1,24 +1,24 @@
 
-#include "mmaprecord.h"
+#include <string>
+#include <sstream>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "mmaprecord.h"
+
 #include "jstringholder.h"
 
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <sstream>
 #include <sys/mman.h>
-#include <string>
 #include "log.h"
 
 mmap_info *get_mmap_info(JNIEnv *env, jobject object) {
     jclass mmap_record_clazz = env->GetObjectClass(object);
-    jfieldID reference_id = env->GetFieldID(mmap_record_clazz, "mBufferInfoReference", "L");
-    return static_cast<mmap_info *>(env->GetLongField(object, reference_id));
+    jfieldID reference_id = env->GetFieldID(mmap_record_clazz, "mBufferInfoReference", "J");
+    return reinterpret_cast<mmap_info *>(env->GetLongField(object, reference_id));
 }
 
 JNIEXPORT jint JNICALL
@@ -48,13 +48,13 @@ Java_com_chan_lib_MmapRecord_init(JNIEnv *env, jobject instance, jstring buffer,
     }
 
     // read dirty data
-    stat buffer_file_stat;
+    struct stat buffer_file_stat;
     if (fstat(buffer_fd, &buffer_file_stat) >= 0) {
         size_t buffer_file_size = (size_t) buffer_file_stat.st_size;
         if (buffer_file_size > 0) {
             char *buffered_data = (char *) mmap(0, buffer_file_size, PROT_WRITE | PROT_READ,
                                                 MAP_SHARED, buffer_fd, 0);
-            LOGD(buffered_data);
+            LOG_D("%s", buffered_data);
         }
     }
 
@@ -75,7 +75,7 @@ Java_com_chan_lib_MmapRecord_init(JNIEnv *env, jobject instance, jstring buffer,
     info->buffer_size = buffer_size;
 
     jclass mmap_record_clazz = env->GetObjectClass(instance);
-    jfieldID reference_id = env->GetFieldID(mmap_record_clazz, "mBufferInfoReference", "L");
+    jfieldID reference_id = env->GetFieldID(mmap_record_clazz, "mBufferInfoReference", "J");
     env->SetLongField(instance, reference_id, (jlong) info);
 
     return 0;
@@ -105,7 +105,7 @@ Java_com_chan_lib_MmapRecord_save(JNIEnv *env, jobject object, jstring json) {
     size_t c_json_len = strlen(c_json);
     if (c_json_len >= info->buffer_size) {
         // TODO
-        LOGD("json too long");
+        LOG_D("%s", "json too long");
         return;
     }
 
