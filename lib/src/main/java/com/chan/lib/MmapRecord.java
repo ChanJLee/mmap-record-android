@@ -1,9 +1,11 @@
 package com.chan.lib;
 
+import android.support.annotation.Keep;
+
 /**
  * Created by chan on 2018/1/21.
  */
-
+@Keep
 public class MmapRecord {
 	private long mBufferInfoReference;
 
