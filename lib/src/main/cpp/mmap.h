@@ -31,13 +31,18 @@ typedef struct {
     u2 padding;
 } mmap_header;
 
-u1* mmap_alloc(int fd, size_t size);
+typedef struct {
+    u1 *buffer;
+    size_t size;
+} mem_info;
 
-bool has_dirty_data(const u1* buffer, size_t size);
+u1 *mmap_alloc(int fd, size_t size);
 
-NEED_FREE u1* read_data(const u1* buffer, size_t size);
+mem_info read_dirty_data(int fd);
 
-void write_data(u1* buffer, size_t buffer_size, const u1* data, size_t data_size);
+NEED_FREE u1 *read_data(const u1 *buffer, size_t size);
+
+void write_data(u1 *buffer, size_t buffer_size, const u1 *data, size_t data_size);
 
 #ifdef __cplusplus
 }
