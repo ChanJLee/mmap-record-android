@@ -65,6 +65,7 @@ NEED_FREE u1 *read_data(const u1 *buffer, size_t size) {
         return nullptr;
     }
 
+    // ignore mmap header
     u1 *result = new u1[header.size];
     memcpy(result, buffer + sizeof(mmap_header), header.size);
     return result;
@@ -76,10 +77,15 @@ void write_data(u1 *buffer, size_t buffer_size, const u1 *data, size_t data_size
         return;
     }
 
+    // copy magic number
     mmap_header header;
     memcpy(header.magic, MAGIC_HEADER, sizeof(MAGIC_HEADER));
+    // write data size
     header.size = data_size;
+
+    // copy header
     memcpy(buffer, &header, sizeof(mmap_header));
+    // copy data
     memcpy(buffer + sizeof(mmap_header), data, data_size);
 }
 
