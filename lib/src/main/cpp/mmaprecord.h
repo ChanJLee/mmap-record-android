@@ -10,15 +10,14 @@ extern "C" {
 #endif
 
 #include <jni.h>
-
-typedef char byte;
+#include "mmap.h"
 
 typedef struct {
     int buffer_fd;
     int log_fd;
     int buffer_size;
     int used_size = 0;
-    byte *buffer;
+    u1 *buffer;
 } mmap_info;
 
 JNIEXPORT jint JNICALL

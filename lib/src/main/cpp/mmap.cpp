@@ -13,6 +13,8 @@ extern "C" {
 #include <string.h>
 
 u1 *mmap_alloc(int fd, size_t size) {
+    ftruncate(fd, size);
+    lseek(fd, 0, SEEK_SET);
     size_t alloc_size = ((size / PAGE_SIZE) + 1) * PAGE_SIZE;
     u1 *map_ptr = (u1 *) mmap(0, alloc_size, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
     return map_ptr == MAP_FAILED ? nullptr : map_ptr;

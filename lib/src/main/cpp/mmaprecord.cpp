@@ -1,6 +1,7 @@
 
 #include <string>
 #include <sstream>
+#include "mmap.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,26 +48,14 @@ Java_com_chan_lib_MmapRecord_init(JNIEnv *env, jobject instance, jstring buffer,
         return -1;
     }
 
-    // read dirty data
-    struct stat buffer_file_stat;
-    if (fstat(buffer_fd, &buffer_file_stat) >= 0) {
-        size_t buffer_file_size = (size_t) buffer_file_stat.st_size;
-        if (buffer_file_size > 0) {
-            char *buffered_data = (char *) mmap(0, buffer_file_size, PROT_WRITE | PROT_READ,
-                                                MAP_SHARED, buffer_fd, 0);
-            LOG_D("%s", buffered_data);
-        }
+    mem_info dirty_data_info = read_dirty_data(buffer_fd);
+    if (dirty_data_info.buffer != nullptr && dirty_data_info.size > 0) {
+        LOG_D("has dirty data size: %d", dirty_data_info.size);
     }
 
     // write data
     const int buffer_size = 1000;
-    // 1000 is buffer size
-    ftruncate(buffer_fd, buffer_size);
-    lseek(buffer_fd, 0, SEEK_SET);
-    char *map_ptr = (char *) mmap(0, buffer_size, PROT_WRITE | PROT_READ, MAP_SHARED, buffer_fd, 0);
-    if (map_ptr == MAP_FAILED) {
-        return -2;
-    }
+    u1 *map_ptr = mmap_alloc(buffer_fd, buffer_fd);
 
     mmap_info *info = new mmap_info;
     info->buffer = map_ptr;
@@ -120,7 +109,7 @@ Java_com_chan_lib_MmapRecord_read(JNIEnv *env, jobject instance) {
         return nullptr;
     }
 
-    return env->NewStringUTF(info->buffer);
+    return env->NewStringUTF((const char *) info->buffer);
 }
 
 
