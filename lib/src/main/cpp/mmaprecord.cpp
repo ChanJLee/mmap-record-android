@@ -55,7 +55,7 @@ Java_com_chan_lib_MmapRecord_init(JNIEnv *env, jobject instance, jstring buffer,
 
     // write data
     const int buffer_size = 1000;
-    u1 *map_ptr = mmap_alloc(buffer_fd, buffer_fd);
+    u1 *map_ptr = mmap_alloc(buffer_fd, buffer_size);
 
     mmap_info *info = new mmap_info;
     info->buffer = map_ptr;
