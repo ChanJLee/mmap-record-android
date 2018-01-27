@@ -12,14 +12,6 @@ extern "C" {
 #include <jni.h>
 #include "mmap.h"
 
-typedef struct {
-    int buffer_fd;
-    int log_fd;
-    int buffer_size;
-    int used_size = 0;
-    u1 *buffer;
-} mmap_info;
-
 JNIEXPORT jint JNICALL
 Java_com_chan_lib_MmapRecord_init(JNIEnv *env, jobject instance, jstring path, jstring log_path);
 

@@ -5,6 +5,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include "mmap.h"
+#include <fcntl.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,83 +13,77 @@ extern "C" {
 
 #include <string.h>
 
+void read_dirty_data(int fd, mem_info *info);
+
+u1 *mmap_alloc(int fd, size_t size);
+
+int open(const char *buffer_path, const char *path, mmap_info *info) {
+    if (strlen(buffer_path) == 0 || strlen(path) || info == nullptr) {
+        return ERROR_INVALID_ARGUMENT;
+    }
+
+    int buffer_fd = open(buffer_path, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    if (buffer_fd < 0) {
+        return ERROR_OPEN_BUFFER;
+    }
+
+    int path_fd = open(path, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    if (path_fd < 0) {
+        close(buffer_fd);
+        return ERROR_OPEN_PATH;
+    }
+
+    mem_info mem_info;
+    read_dirty_data(buffer_fd, &mem_info);
+    if (mem_info.size != 0 && mem_info.buffer != nullptr) {
+        // write data to path
+        write(path_fd, mem_info.buffer, mem_info.size);
+    }
+
+    info->buffer_size = 1000;
+    info->buffer_fd = buffer_fd;
+    info->path_fd = path_fd;
+    info->used_size = 0;
+    info->buffer = mmap_alloc(buffer_fd, info->buffer_size);
+
+    return 0;
+}
+
 u1 *mmap_alloc(int fd, size_t size) {
-    ftruncate(fd, size);
+    ftruncate(fd, (off_t) size);
     lseek(fd, 0, SEEK_SET);
     size_t alloc_size = ((size / PAGE_SIZE) + 1) * PAGE_SIZE;
-    u1 *map_ptr = (u1 *) mmap(0, alloc_size, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
+    u1 *map_ptr = (u1 *) mmap(0, alloc_size, PROT_WRITE | PROT_READ, MAP_PRIVATE, fd, 0);
     return map_ptr == MAP_FAILED ? nullptr : map_ptr;
 }
 
-bool has_dirty_data(const u1 *buffer, size_t size) {
-    if (size < sizeof(mmap_header)) {
-        return false;
-    }
-
-    return memcmp(buffer, MAGIC_HEADER, sizeof(MAGIC_HEADER)) == 0;
-}
-
-mem_info read_dirty_data(int fd) {
-
-    mem_info result{
-            .size = 0,
-            .buffer = nullptr
-    };
+void read_dirty_data(int fd, mem_info *info) {
+    info->size = 0;
+    info->buffer = nullptr;
 
     // read dirty data
     struct stat buffer_file_stat;
     if (fstat(fd, &buffer_file_stat) < 0) {
-        return result;
+        return;
     }
 
     size_t buffer_file_size = (size_t) buffer_file_stat.st_size;
     if (buffer_file_size <= 0) {
-        return result;
-    }
-
-    u1 *buffered_data = (u1 *) mmap(0, buffer_file_size, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
-    bool has_data = has_dirty_data(buffered_data, buffer_file_size);
-    if (has_data) {
-        result.buffer = buffered_data + sizeof(mmap_header);
-        result.size = buffer_file_size - sizeof(mmap_header);
-    }
-
-    return result;
-}
-
-NEED_FREE u1 *read_data(const u1 *buffer, size_t size) {
-    if (!has_dirty_data(buffer, size)) {
-        return nullptr;
-    }
-
-    mmap_header header;
-    memcpy(&header, buffer, sizeof(mmap_header));
-    if (header.size == 0) {
-        return nullptr;
-    }
-
-    // ignore mmap header
-    u1 *result = new u1[header.size];
-    memcpy(result, buffer + sizeof(mmap_header), header.size);
-    return result;
-}
-
-void write_data(u1 *buffer, size_t buffer_size, const u1 *data, size_t data_size) {
-    // need to allocate more buffer
-    if (buffer_size <= data_size + sizeof(mmap_header)) {
         return;
     }
 
-    // copy magic number
-    mmap_header header;
-    memcpy(header.magic, MAGIC_HEADER, sizeof(MAGIC_HEADER));
-    // write data size
-    header.size = data_size;
+    info->buffer = (u1 *) mmap(0, buffer_file_size, PROT_WRITE | PROT_READ, MAP_PRIVATE, fd, 0);
+    info->size = buffer_file_size;
+}
 
-    // copy header
-    memcpy(buffer, &header, sizeof(mmap_header));
+void write(u1 *buffer, size_t buffer_size, const u1 *data, size_t data_size) {
+    // need to allocate more buffer
+    if (buffer_size <= data_size) {
+        return;
+    }
+
     // copy data
-    memcpy(buffer + sizeof(mmap_header), data, data_size);
+    memcpy(buffer, data, data_size);
 }
 
 #ifdef __cplusplus
