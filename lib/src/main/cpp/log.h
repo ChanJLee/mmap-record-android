@@ -13,7 +13,7 @@ extern "C" {
 #include <android/log.h>
 
 #define LOG_TAG "mmap_record"
-#define LOG_D(...) __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
+#define LOG_D(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 
 #ifdef __cplusplus
 }

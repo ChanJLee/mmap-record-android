@@ -17,17 +17,17 @@ void read_dirty_data(int fd, mem_info *info);
 
 u1 *mmap_alloc(int fd, size_t size);
 
-int open(const char *buffer_path, const char *path, mmap_info *info) {
-    if (strlen(buffer_path) == 0 || strlen(path) || info == nullptr) {
+int open_buffer(const char *buffer_path, const char *path, mmap_info *info) {
+    if (strlen(buffer_path) == 0 || strlen(path) == 0 || info == nullptr) {
         return ERROR_INVALID_ARGUMENT;
     }
 
-    int buffer_fd = open(buffer_path, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    int buffer_fd = ::open(buffer_path, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (buffer_fd < 0) {
         return ERROR_OPEN_BUFFER;
     }
 
-    int path_fd = open(path, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    int path_fd = ::open(path, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (path_fd < 0) {
         close(buffer_fd);
         return ERROR_OPEN_PATH;
@@ -76,14 +76,14 @@ void read_dirty_data(int fd, mem_info *info) {
     info->size = buffer_file_size;
 }
 
-void write(u1 *buffer, size_t buffer_size, const u1 *data, size_t data_size) {
+void write_buffer(mmap_info *info, const u1 *data, size_t data_size) {
     // need to allocate more buffer
-    if (buffer_size <= data_size) {
+    if (info->buffer_size <= data_size) {
         return;
     }
 
     // copy data
-    memcpy(buffer, data, data_size);
+    memcpy(info->buffer, data, data_size);
 }
 
 #ifdef __cplusplus

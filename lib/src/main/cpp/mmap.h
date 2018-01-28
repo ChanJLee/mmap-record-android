@@ -39,9 +39,9 @@ typedef struct {
 #define ERROR_OPEN_BUFFER -2
 #define ERROR_OPEN_PATH -3
 
-int open(const char *buffer_path, const char *path, mmap_info *info);
+int open_buffer(const char *buffer_path, const char *path, mmap_info *info);
 
-void write(u1 *buffer, size_t buffer_size, const u1 *data, size_t data_size);
+void write_buffer(mmap_info* info, const u1 *data, size_t data_size);
 
 #ifdef __cplusplus
 }
