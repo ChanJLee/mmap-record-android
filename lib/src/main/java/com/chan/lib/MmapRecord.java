@@ -13,11 +13,11 @@ public class MmapRecord {
 		System.loadLibrary("mmap-record");
 	}
 
-	public MmapRecord(String path, String log) {
-		init(path, log);
+	public MmapRecord(String bufferPath, String path) {
+		init(bufferPath, path);
 	}
 
-	private native int init(String path, String log);
+	private native int init(String bufferPath, String path);
 
 	public native void release();
 
