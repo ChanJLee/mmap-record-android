@@ -9,7 +9,8 @@ extern "C" {
 
 #include "mmaprecord.h"
 
-#include "jstringholder.h"
+#include "ScopeString.h"
+#include "ScopeByteArray.h"
 
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -30,11 +31,11 @@ void set_mmap_info(JNIEnv *env, jobject object, void *ref) {
 JNIEXPORT jint JNICALL
 Java_com_chan_lib_MmapRecord_init(JNIEnv *env, jobject instance, jstring buffer, jstring log) {
     // open buffer
-    JStringHolder buffer_path_string_holder(*env, buffer);
+    ScopeString buffer_path_string_holder(env, buffer);
     const char *buffer_path = buffer_path_string_holder.getCString();
 
     // open log
-    JStringHolder log_path_string_holder(*env, log);
+    ScopeString log_path_string_holder(env, log);
     const char *log_path = log_path_string_holder.getCString();
 
     mmap_info *info = new mmap_info;
@@ -42,7 +43,6 @@ Java_com_chan_lib_MmapRecord_init(JNIEnv *env, jobject instance, jstring buffer,
     set_mmap_info(env, instance, info);
     return 0;
 }
-
 
 JNIEXPORT void JNICALL
 Java_com_chan_lib_MmapRecord_release(JNIEnv *env, jobject instance) {
@@ -56,26 +56,29 @@ Java_com_chan_lib_MmapRecord_release(JNIEnv *env, jobject instance) {
 }
 
 JNIEXPORT void JNICALL
-Java_com_chan_lib_MmapRecord_save(JNIEnv *env, jobject object, jstring json) {
+Java_com_chan_lib_MmapRecord_save(JNIEnv *env, jobject object, jbyteArray bytes) {
     mmap_info *info = get_mmap_info(env, object);
     if (info == nullptr) {
         return;
     }
 
-    JStringHolder json_holder(*env, json);
-    const char *c_json = json_holder.getCString();
-    size_t c_json_len = strlen(c_json);
-    write_buffer(info, (const u1 *) c_json, c_json_len);
+    jsize len = env->GetArrayLength(bytes);
+    ScopeByteArray scopeByteArray(env, bytes);
+    jbyte *data = scopeByteArray.getBytes();
+
+    write_buffer(info, (const u1 *) data, (size_t) len);
 }
 
-JNIEXPORT jstring JNICALL
+JNIEXPORT jbyteArray JNICALL
 Java_com_chan_lib_MmapRecord_read(JNIEnv *env, jobject instance) {
     mmap_info *info = get_mmap_info(env, instance);
     if (info == nullptr || info->used_size <= 0) {
         return nullptr;
     }
 
-    return env->NewStringUTF((const char *) info->buffer);
+    jbyteArray array = env->NewByteArray(info->used_size);
+    env->SetByteArrayRegion(array, 0, info->used_size, (const jbyte *) info->buffer);
+    return array;
 }
 
 

@@ -32,8 +32,8 @@ public class MainActivity extends AppCompatActivity {
 			public void onClick(View v) {
 				String time = System.currentTimeMillis() + "";
 				Log.d("chan_debug", time);
-				mmapRecord.save(time);
-				String json = mmapRecord.read();
+				mmapRecord.save(time.getBytes());
+				String json = new String(mmapRecord.read());
 				if (!TextUtils.isEmpty(json)) {
 					textView.setText(json);
 				}

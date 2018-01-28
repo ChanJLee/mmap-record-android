@@ -21,7 +21,7 @@ public class MmapRecord {
 
 	public native void release();
 
-	public native void save(String json);
+	public native void save(byte[] data);
 
-	public native String read();
+	public native byte[] read();
 }

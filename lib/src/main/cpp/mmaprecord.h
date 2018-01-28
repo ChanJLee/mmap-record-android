@@ -19,9 +19,9 @@ JNIEXPORT void JNICALL
 Java_com_chan_lib_MmapRecord_release(JNIEnv *env, jobject instance);
 
 JNIEXPORT void JNICALL
-Java_com_chan_lib_MmapRecord_save(JNIEnv *env, jobject instance, jstring json);
+Java_com_chan_lib_MmapRecord_save(JNIEnv *env, jobject instance, jbyteArray bytes);
 
-JNIEXPORT jstring JNICALL
+JNIEXPORT jbyteArray JNICALL
 Java_com_chan_lib_MmapRecord_read(JNIEnv *env, jobject instance);
 
 #ifdef __cplusplus

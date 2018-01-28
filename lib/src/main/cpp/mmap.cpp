@@ -82,6 +82,7 @@ void write_buffer(mmap_info *info, const u1 *data, size_t data_size) {
         return;
     }
 
+    info->used_size = data_size;
     // copy data
     memcpy(info->buffer, data, data_size);
 }

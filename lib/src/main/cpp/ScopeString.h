@@ -11,19 +11,19 @@ extern "C" {
 
 #include <jni.h>
 
-class JStringHolder {
+class ScopeString {
 private:
-    JNIEnv &mEnv;
-    jstring mJString;
+    JNIEnv *mEnv;
+    const jstring mJString;
     const char *mCString;
 
 public:
-    JStringHolder(JNIEnv &env, jstring jstr) : mEnv(env), mJString(jstr) {
-        mCString = mEnv.GetStringUTFChars(mJString, 0);
+    ScopeString(JNIEnv *env, const jstring jstr) : mEnv(env), mJString(jstr) {
+        mCString = mEnv->GetStringUTFChars(mJString, 0);
     }
 
-    virtual ~JStringHolder() {
-        mEnv.ReleaseStringUTFChars(mJString, mCString);
+    virtual ~ScopeString() {
+        mEnv->ReleaseStringUTFChars(mJString, mCString);
     }
 
     const char *getCString() const {
