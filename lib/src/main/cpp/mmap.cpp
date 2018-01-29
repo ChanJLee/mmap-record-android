@@ -41,7 +41,7 @@ int open_buffer(const char *buffer_path, const char *path, mmap_info *info) {
         write(path_fd, mem_info.buffer, mem_info.size);
     }
 
-    info->buffer_size = 128;
+    info->buffer_size = RESIZE(128);
     info->buffer_fd = buffer_fd;
     info->path_fd = path_fd;
     info->used_size = 0;
@@ -53,7 +53,7 @@ int open_buffer(const char *buffer_path, const char *path, mmap_info *info) {
 u1 *mmap_alloc(int fd, size_t size) {
     ftruncate(fd, (off_t) size);
     lseek(fd, 0, SEEK_SET);
-    size_t alloc_size = RESIZE(size);
+    size_t alloc_size = size;
     u1 *map_ptr = (u1 *) mmap(0, alloc_size, PROT_WRITE | PROT_READ, MAP_PRIVATE, fd, 0);
     return map_ptr == MAP_FAILED ? nullptr : map_ptr;
 }
@@ -81,10 +81,16 @@ void write_buffer(mmap_info *info, const u1 *data, size_t data_size) {
     // need to allocate more buffer
     if (info->buffer_size <= data_size) {
         u4 resize_size = RESIZE(info->buffer_size * 2);
-        LOG_D("size %d, address %x", info->buffer_size, (u4) info->buffer);
-        mremap(info->buffer, info->buffer_size, resize_size, MAP_PRIVATE);
+        u1 *pre_buffer = info->buffer;
+        LOG_D("size %d, address %x", info->buffer_size, (u4) pre_buffer);
+        info->buffer = (u1 *) mremap(pre_buffer, info->buffer_size, resize_size, 0);
         info->buffer_size = resize_size;
         LOG_D("resize buffer %d, address %x", info->buffer_size, (u4) info->buffer);
+    }
+
+    if (info->buffer == MAP_FAILED) {
+        LOG_D("ignore write buffer");
+        return;
     }
 
     info->used_size = data_size;
