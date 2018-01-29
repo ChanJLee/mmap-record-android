@@ -5,6 +5,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include "mmap.h"
+#include "log.h"
 #include <fcntl.h>
 
 #ifdef __cplusplus
@@ -40,7 +41,7 @@ int open_buffer(const char *buffer_path, const char *path, mmap_info *info) {
         write(path_fd, mem_info.buffer, mem_info.size);
     }
 
-    info->buffer_size = 1000;
+    info->buffer_size = 128;
     info->buffer_fd = buffer_fd;
     info->path_fd = path_fd;
     info->used_size = 0;
@@ -79,7 +80,9 @@ void read_dirty_data(int fd, mem_info *info) {
 void write_buffer(mmap_info *info, const u1 *data, size_t data_size) {
     // need to allocate more buffer
     if (info->buffer_size <= data_size) {
-        return;
+        mremap(info->buffer, info->buffer_size, info->buffer_size * 2, MAP_PRIVATE);
+        info->buffer_size *= 2;
+        LOG_D("resize buffer %d", info->buffer_size);
     }
 
     info->used_size = data_size;

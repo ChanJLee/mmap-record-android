@@ -30,10 +30,11 @@ public class MainActivity extends AppCompatActivity {
 		button.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
+				byte[] array = mmapRecord.read();
+				String json = array == null || array.length == 0 ? "" : new String(array);
 				String time = System.currentTimeMillis() + "";
 				Log.d("chan_debug", time);
-				mmapRecord.save(time.getBytes());
-				String json = new String(mmapRecord.read());
+				mmapRecord.save((time + "|" + json).getBytes());
 				if (!TextUtils.isEmpty(json)) {
 					textView.setText(json);
 				}
