@@ -24,4 +24,6 @@ public class MmapRecord {
 	public native void save(byte[] data);
 
 	public native byte[] read();
+
+	public native void recycle(byte[] data);
 }

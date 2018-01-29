@@ -52,6 +52,7 @@ Java_com_chan_lib_MmapRecord_release(JNIEnv *env, jobject instance) {
     }
 
     memset(info->buffer, 0, info->buffer_size);
+    munmap(info->buffer, info->buffer_size);
     close(info->buffer_fd);
     close(info->path_fd);
 }

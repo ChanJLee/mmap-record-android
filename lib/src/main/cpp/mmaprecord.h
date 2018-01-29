@@ -29,3 +29,10 @@ Java_com_chan_lib_MmapRecord_read(JNIEnv *env, jobject instance);
 #endif
 
 #endif //MMAPRECORD_MMAPRECORD_H
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_chan_lib_MmapRecord_recycle(JNIEnv *env, jobject instance, jbyteArray data) {
+    if (data != nullptr) {
+        env->DeleteLocalRef(data);
+    }
+}

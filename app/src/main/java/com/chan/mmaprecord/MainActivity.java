@@ -14,6 +14,8 @@ import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
 
+	private MmapRecord mMmapRecord;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -24,7 +26,7 @@ public class MainActivity extends AppCompatActivity {
 			dir.mkdirs();
 		}
 
-		final MmapRecord mmapRecord = new MmapRecord(new File(dir, "temp_log.log").getAbsolutePath(), new File(dir, "log.log").getAbsolutePath());
+		final MmapRecord mmapRecord = mMmapRecord = new MmapRecord(new File(dir, "temp_log.log").getAbsolutePath(), new File(dir, "log.log").getAbsolutePath());
 		final TextView textView = findViewById(R.id.sample_text);
 		Button button = findViewById(R.id.button);
 		button.setOnClickListener(new View.OnClickListener() {
@@ -32,6 +34,9 @@ public class MainActivity extends AppCompatActivity {
 			public void onClick(View v) {
 				byte[] array = mmapRecord.read();
 				String json = array == null || array.length == 0 ? "" : new String(array);
+				if (array != null) {
+					mmapRecord.recycle(array);
+				}
 				String time = System.currentTimeMillis() + "";
 				Log.d("chan_debug", time);
 				mmapRecord.save((time + "|" + json).getBytes());
@@ -41,5 +46,11 @@ public class MainActivity extends AppCompatActivity {
 			}
 		});
 
+	}
+
+	@Override
+	protected void onDestroy() {
+		mMmapRecord.release();
+		super.onDestroy();
 	}
 }
