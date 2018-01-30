@@ -38,7 +38,9 @@ int open_buffer(const char *buffer_path, const char *path, mmap_info *info) {
     read_dirty_data(buffer_fd, &mem_info);
     if (mem_info.size != 0 && mem_info.buffer != nullptr) {
         // write data to path
+        LOG_D("find dirty data, size %d, address %x", mem_info.size, (u4) mem_info.buffer);
         write(path_fd, mem_info.buffer, mem_info.size);
+        fsync(path_fd);
     }
 
     info->buffer_size = RESIZE(128);

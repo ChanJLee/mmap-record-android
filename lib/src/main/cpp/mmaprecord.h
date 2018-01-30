@@ -27,6 +27,9 @@ Java_com_chan_lib_MmapRecord_read(JNIEnv *env, jobject instance);
 JNIEXPORT void JNICALL
 Java_com_chan_lib_MmapRecord_recycle(JNIEnv *env, jobject instance, jbyteArray data);
 
+JNIEXPORT void JNICALL
+Java_com_chan_lib_MmapRecord_flush(JNIEnv *env, jobject instance);
+
 #ifdef __cplusplus
 }
 #endif

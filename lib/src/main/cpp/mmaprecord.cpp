@@ -12,8 +12,6 @@ extern "C" {
 #include "ScopeString.h"
 #include "ScopeByteArray.h"
 
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <sys/mman.h>
 
 mmap_info *get_mmap_info(JNIEnv *env, jobject object) {
@@ -89,6 +87,20 @@ Java_com_chan_lib_MmapRecord_recycle(JNIEnv *env, jobject instance, jbyteArray d
         env->DeleteLocalRef(data);
     }
 }
+
+JNIEXPORT void JNICALL
+Java_com_chan_lib_MmapRecord_flush(JNIEnv *env, jobject instance) {
+    mmap_info *info = get_mmap_info(env, instance);
+    if (info == nullptr || info->buffer == nullptr) {
+        return;
+    }
+
+    write(info->path_fd, info->buffer, info->used_size);
+    fsync(info->path_fd);
+    info->used_size = 0;
+    memset(info->buffer, 0, info->buffer_size);
+}
+
 #ifdef __cplusplus
 }
 #endif

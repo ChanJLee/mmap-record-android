@@ -26,7 +26,9 @@ public class MainActivity extends AppCompatActivity {
 			dir.mkdirs();
 		}
 
-		final MmapRecord mmapRecord = mMmapRecord = new MmapRecord(new File(dir, "temp_log.log").getAbsolutePath(), new File(dir, "log.log").getAbsolutePath());
+		String bufferPath = new File(dir, "temp_log.log").getAbsolutePath();
+		String targetPath = new File(dir, "log.log").getAbsolutePath();
+		final MmapRecord mmapRecord = mMmapRecord = new MmapRecord(bufferPath, targetPath);
 		final TextView textView = findViewById(R.id.sample_text);
 		Button button = findViewById(R.id.button);
 		button.setOnClickListener(new View.OnClickListener() {
@@ -40,15 +42,30 @@ public class MainActivity extends AppCompatActivity {
 					}
 					String time = System.currentTimeMillis() + "";
 					mmapRecord.save((time + "|" + json).getBytes());
+					textView.setText(time);
 				}
 			}
 		});
 
-	}
+		findViewById(R.id.kill).setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				finish();
+			}
+		});
 
-	@Override
-	protected void onDestroy() {
-		mMmapRecord.release();
-		super.onDestroy();
+		findViewById(R.id.release).setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				mMmapRecord.release();
+			}
+		});
+
+		findViewById(R.id.flush).setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				mMmapRecord.flush();
+			}
+		});
 	}
 }
