@@ -47,7 +47,7 @@ Java_com_chan_lib_MmapRecord_init(JNIEnv *env, jobject instance, jstring buffer,
 JNIEXPORT void JNICALL
 Java_com_chan_lib_MmapRecord_release(JNIEnv *env, jobject instance) {
     mmap_info *info = get_mmap_info(env, instance);
-    if (info == nullptr) {
+    if (info == nullptr || info->buffer == nullptr) {
         return;
     }
 
@@ -74,7 +74,7 @@ Java_com_chan_lib_MmapRecord_save(JNIEnv *env, jobject object, jbyteArray bytes)
 JNIEXPORT jbyteArray JNICALL
 Java_com_chan_lib_MmapRecord_read(JNIEnv *env, jobject instance) {
     mmap_info *info = get_mmap_info(env, instance);
-    if (info == nullptr || info->used_size <= 0) {
+    if (info == nullptr || info->used_size <= 0 || info->buffer == nullptr) {
         return nullptr;
     }
 

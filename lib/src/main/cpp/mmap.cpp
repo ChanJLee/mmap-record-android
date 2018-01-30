@@ -80,15 +80,20 @@ void read_dirty_data(int fd, mem_info *info) {
 void write_buffer(mmap_info *info, const u1 *data, size_t data_size) {
     // need to allocate more buffer
     if (info->buffer_size <= data_size) {
-        u4 resize_size = RESIZE(info->buffer_size * 2);
-        u1 *pre_buffer = info->buffer;
-        LOG_D("size %d, address %x", info->buffer_size, (u4) pre_buffer);
-        info->buffer = (u1 *) mremap(pre_buffer, info->buffer_size, resize_size, 0);
+        u4 resize_size = RESIZE(info->buffer_size);
+        ftruncate(info->buffer_fd, (off_t) resize_size);
+        LOG_D("size %d, address %x", info->buffer_size, (u4) info->buffer);
+        info->buffer = (u1 *) mremap(info->buffer, info->buffer_size, resize_size, MREMAP_MAYMOVE);
         info->buffer_size = resize_size;
         LOG_D("resize buffer %d, address %x", info->buffer_size, (u4) info->buffer);
+
+        if (info->buffer == MAP_FAILED) {
+            LOG_D("remap failed");
+            info->buffer = nullptr;
+        }
     }
 
-    if (info->buffer == MAP_FAILED) {
+    if (info->buffer == nullptr) {
         LOG_D("ignore write buffer");
         return;
     }
