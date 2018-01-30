@@ -35,6 +35,11 @@ typedef struct {
     u4 used_size = 0;
 } mmap_info;
 
+typedef struct {
+    u4 buffer_size;
+    u4 used_size;
+} buffer_header;
+
 #define ERROR_INVALID_ARGUMENT -1
 #define ERROR_OPEN_BUFFER -2
 #define ERROR_OPEN_PATH -3
@@ -48,6 +53,5 @@ void write_buffer(mmap_info *info, const u1 *data, size_t data_size);
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif //MMAPRECORD_MMAP_H
