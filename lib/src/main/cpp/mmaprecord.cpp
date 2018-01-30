@@ -2,6 +2,7 @@
 #include <string>
 #include <sstream>
 #include "mmap.h"
+#include "log.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,6 +68,7 @@ Java_com_chan_lib_MmapRecord_save(JNIEnv *env, jobject object, jbyteArray bytes)
     jbyte *data = scopeByteArray.getBytes();
 
     write_buffer(info, (const u1 *) data, (size_t) len);
+    LOG_D("write buffer size: %d", info->used_size);
 }
 
 JNIEXPORT jbyteArray JNICALL

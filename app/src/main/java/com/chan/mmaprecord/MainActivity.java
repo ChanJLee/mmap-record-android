@@ -34,16 +34,14 @@ public class MainActivity extends AppCompatActivity {
 		button.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				for (int i = 0; i < 100; ++i) {
-					byte[] array = mmapRecord.read();
-					String json = array == null || array.length == 0 ? "" : new String(array);
-					if (array != null) {
-						mmapRecord.recycle(array);
-					}
-					String time = System.currentTimeMillis() + "";
-					mmapRecord.save((time + "|" + json).getBytes());
-					textView.setText(time);
+				byte[] array = mmapRecord.read();
+				String json = array == null || array.length == 0 ? "" : new String(array);
+				if (array != null) {
+					mmapRecord.recycle(array);
 				}
+				String time = System.currentTimeMillis() + "";
+				mmapRecord.save((time + "|" + json).getBytes());
+				textView.setText(time);
 			}
 		});
 
