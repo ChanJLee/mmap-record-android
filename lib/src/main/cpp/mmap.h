@@ -22,9 +22,23 @@ typedef unsigned char u1;
 typedef unsigned short u2;
 typedef unsigned int u4;
 
+const u1 MAGIC_HEADER[] = {0x05, 0x21, 0x05, 0x25, 0x12, 0x12, 0x01, 0x18};
+
+#define TYPE_DATA 0x01;
+#define HEADER_V1 0x01;
+
+typedef struct {
+    u1 magic[sizeof(MAGIC_HEADER)];
+    u4 size = 0;
+    u2 type = TYPE_DATA;
+    u2 version = HEADER_V1;
+} buffer_header;
+
+
 typedef struct {
     u1 *buffer;
-    size_t size;
+    buffer_header *header;
+    u4 size;
 } mem_info;
 
 typedef struct {
@@ -32,13 +46,8 @@ typedef struct {
     int path_fd;
     u4 buffer_size;
     u1 *buffer;
-    u4 used_size = 0;
 } mmap_info;
 
-typedef struct {
-    u4 buffer_size;
-    u4 used_size;
-} buffer_header;
 
 #define ERROR_INVALID_ARGUMENT -1
 #define ERROR_OPEN_BUFFER -2
@@ -49,6 +58,8 @@ typedef struct {
 int open_buffer(const char *buffer_path, const char *path, mmap_info *info);
 
 void write_buffer(mmap_info *info, const u1 *data, size_t data_size);
+
+int check_header(const u1 *buffer, size_t size, buffer_header *header);
 
 #ifdef __cplusplus
 }

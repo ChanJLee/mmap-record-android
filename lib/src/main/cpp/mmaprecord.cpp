@@ -2,7 +2,6 @@
 #include <string>
 #include <sstream>
 #include "mmap.h"
-#include "log.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,6 +25,7 @@ void set_mmap_info(JNIEnv *env, jobject object, void *ref) {
     jfieldID reference_id = env->GetFieldID(mmap_record_clazz, "mBufferInfoReference", "J");
     env->SetLongField(object, reference_id, (jlong) ref);
 }
+
 
 JNIEXPORT jint JNICALL
 Java_com_chan_lib_MmapRecord_init(JNIEnv *env, jobject instance, jstring buffer, jstring log) {
@@ -68,18 +68,24 @@ Java_com_chan_lib_MmapRecord_save(JNIEnv *env, jobject object, jbyteArray bytes)
     jbyte *data = scopeByteArray.getBytes();
 
     write_buffer(info, (const u1 *) data, (size_t) len);
-    LOG_D("write buffer size: %d", info->used_size);
 }
 
 JNIEXPORT jbyteArray JNICALL
 Java_com_chan_lib_MmapRecord_read(JNIEnv *env, jobject instance) {
     mmap_info *info = get_mmap_info(env, instance);
-    if (info == nullptr || info->used_size <= 0 || info->buffer == nullptr) {
+    if (info == nullptr || info->buffer_size <= 0 || info->buffer == nullptr) {
         return nullptr;
     }
 
-    jbyteArray array = env->NewByteArray(info->used_size);
-    env->SetByteArrayRegion(array, 0, info->used_size, (const jbyte *) info->buffer);
+    buffer_header header;
+    int result = check_header(info->buffer, info->buffer_size, &header);
+    if (result != 0) {
+        return nullptr;
+    }
+
+    jbyteArray array = env->NewByteArray(header.size);
+    env->SetByteArrayRegion(array, 0, header.size,
+                            (const jbyte *) (info->buffer + sizeof(buffer_header)));
     return array;
 }
 
@@ -97,10 +103,19 @@ Java_com_chan_lib_MmapRecord_flush(JNIEnv *env, jobject instance) {
         return;
     }
 
-    write(info->path_fd, info->buffer, info->used_size);
+    buffer_header header;
+    int result = check_header(info->buffer, info->buffer_size, &header);
+    if (result != 0) {
+        return;
+    }
+
+    u1 *data = info->buffer + sizeof(header);
+    write(info->path_fd, data, header.size);
     fsync(info->path_fd);
-    info->used_size = 0;
-    memset(info->buffer, 0, info->buffer_size);
+    header.size = 0;
+
+    // rewrite header
+    memcpy(info->buffer, &header, sizeof(header));
 }
 
 #ifdef __cplusplus

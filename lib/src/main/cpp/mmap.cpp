@@ -18,6 +18,28 @@ void read_dirty_data(int fd, mem_info *info);
 
 u1 *mmap_alloc(int fd, size_t size);
 
+int check_header(const u1 *buffer, size_t size, buffer_header *header) {
+    if (size < sizeof(buffer_header)) {
+        return -1;
+    }
+
+    if (buffer == nullptr) {
+        return -2;
+    }
+
+    if (header == nullptr) {
+        return -3;
+    }
+
+    int is_magic_header = memcmp(buffer, MAGIC_HEADER, sizeof(MAGIC_HEADER));
+    if (is_magic_header != 0) {
+        return is_magic_header;
+    }
+
+    memcpy(header, buffer, sizeof(buffer_header));
+    return 0;
+}
+
 int open_buffer(const char *buffer_path, const char *path, mmap_info *info) {
     if (strlen(buffer_path) == 0 || strlen(path) == 0 || info == nullptr) {
         return ERROR_INVALID_ARGUMENT;
@@ -36,17 +58,17 @@ int open_buffer(const char *buffer_path, const char *path, mmap_info *info) {
 
     mem_info mem_info;
     read_dirty_data(buffer_fd, &mem_info);
-    if (mem_info.size != 0 && mem_info.buffer != nullptr) {
+    if (mem_info.header != nullptr && mem_info.buffer != nullptr && mem_info.size != 0) {
         // write data to path
-        LOG_D("find dirty data, size %d, address %x", mem_info.size, (u4) mem_info.buffer);
-        write(path_fd, mem_info.buffer, mem_info.size);
+        write(path_fd, mem_info.buffer + sizeof(buffer_header), mem_info.header->size);
         fsync(path_fd);
+        munmap(mem_info.buffer, mem_info.size);
+        delete mem_info.header;
     }
 
     info->buffer_size = RESIZE(128);
     info->buffer_fd = buffer_fd;
     info->path_fd = path_fd;
-    info->used_size = 0;
     info->buffer = mmap_alloc(buffer_fd, info->buffer_size);
 
     return 0;
@@ -61,8 +83,9 @@ u1 *mmap_alloc(int fd, size_t size) {
 }
 
 void read_dirty_data(int fd, mem_info *info) {
-    info->size = 0;
+    info->header = nullptr;
     info->buffer = nullptr;
+    info->size = 0;
 
     // read dirty data
     struct stat buffer_file_stat;
@@ -71,11 +94,23 @@ void read_dirty_data(int fd, mem_info *info) {
     }
 
     size_t buffer_file_size = (size_t) buffer_file_stat.st_size;
-    if (buffer_file_size <= 0) {
+    if (buffer_file_size < sizeof(buffer_header)) {
         return;
     }
 
-    info->buffer = (u1 *) mmap(0, buffer_file_size, PROT_WRITE | PROT_READ, MAP_PRIVATE, fd, 0);
+    u1 *buffer = (u1 *) mmap(0, buffer_file_size, PROT_WRITE | PROT_READ, MAP_PRIVATE, fd, 0);
+    if (buffer == MAP_FAILED) {
+        return;
+    }
+
+    buffer_header *header = new buffer_header;
+    int result = check_header(buffer, buffer_file_size, header);
+    if (result != 0) {
+        return;
+    }
+
+    info->buffer = buffer;
+    info->header = header;
     info->size = buffer_file_size;
 }
 
@@ -100,9 +135,16 @@ void write_buffer(mmap_info *info, const u1 *data, size_t data_size) {
         return;
     }
 
-    info->used_size = data_size;
-    // copy data
-    memcpy(info->buffer, data, data_size);
+    buffer_header header;
+    int result = check_header(info->buffer, info->buffer_size, &header);
+    if (result != 0) {
+        return;
+    }
+
+    header.size = data_size;
+    info->buffer_size = data_size;
+    memcpy(info->buffer, &header, sizeof(buffer_header));
+    memcpy(info->buffer + sizeof(buffer_header), data, data_size);
 }
 
 #ifdef __cplusplus
