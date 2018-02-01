@@ -35,11 +35,24 @@ typedef struct {
 } buffer_header;
 
 
-typedef struct {
+class mem_info {
+public:
     u1 *buffer;
     buffer_header *header;
     u4 size;
-} mem_info;
+
+    mem_info() {
+        buffer = nullptr;
+        header = new buffer_header;
+        size = 0;
+    }
+
+    ~mem_info() {
+        if (header != nullptr) {
+            delete header;
+        }
+    }
+};
 
 typedef struct {
     int buffer_fd;

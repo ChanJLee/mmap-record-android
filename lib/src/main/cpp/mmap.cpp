@@ -18,7 +18,7 @@ void read_dirty_data(int fd, mem_info *info);
 
 u1 *mmap_alloc(int fd, size_t size);
 
-int check_header(const u1 *buffer, size_t size, buffer_header *header) {
+int check_header(const u1 *buffer, size_t size) {
     if (size < sizeof(buffer_header)) {
         return -1;
     }
@@ -27,17 +27,7 @@ int check_header(const u1 *buffer, size_t size, buffer_header *header) {
         return -2;
     }
 
-    if (header == nullptr) {
-        return -3;
-    }
-
-    int is_magic_header = memcmp(buffer, MAGIC_HEADER, sizeof(MAGIC_HEADER));
-    if (is_magic_header != 0) {
-        return is_magic_header;
-    }
-
-    memcpy(header, buffer, sizeof(buffer_header));
-    return 0;
+    return memcmp(buffer, MAGIC_HEADER, sizeof(MAGIC_HEADER));
 }
 
 int open_buffer(const char *buffer_path, const char *path, mmap_info *info) {
@@ -103,14 +93,13 @@ void read_dirty_data(int fd, mem_info *info) {
         return;
     }
 
-    buffer_header *header = new buffer_header;
-    int result = check_header(buffer, buffer_file_size, header);
+    int result = check_header(buffer, buffer_file_size);
     if (result != 0) {
         return;
     }
 
+    memcpy(info->header, buffer, sizeof(buffer_header));
     info->buffer = buffer;
-    info->header = header;
     info->size = buffer_file_size;
 }
 
