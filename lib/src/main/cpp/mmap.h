@@ -46,7 +46,6 @@ public:
         header = new buffer_header;
         size = 0;
     }
-
     ~mem_info() {
         if (header != nullptr) {
             delete header;

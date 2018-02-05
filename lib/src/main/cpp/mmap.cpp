@@ -18,7 +18,7 @@ void read_dirty_data(int fd, mem_info *info);
 
 u1 *mmap_alloc(int fd, size_t size);
 
-int check_header(const u1 *buffer, size_t size) {
+int check_header(const u1 *buffer, size_t size, buffer_header *header) {
     if (size < sizeof(buffer_header)) {
         return -1;
     }
@@ -27,7 +27,11 @@ int check_header(const u1 *buffer, size_t size) {
         return -2;
     }
 
-    return memcmp(buffer, MAGIC_HEADER, sizeof(MAGIC_HEADER));
+    int result = memcmp(buffer, MAGIC_HEADER, sizeof(MAGIC_HEADER));
+    if (result == 0) {
+        memcpy(header, buffer, sizeof(buffer_header));
+    }
+    return result;
 }
 
 int open_buffer(const char *buffer_path, const char *path, mmap_info *info) {
@@ -48,18 +52,23 @@ int open_buffer(const char *buffer_path, const char *path, mmap_info *info) {
 
     mem_info mem_info;
     read_dirty_data(buffer_fd, &mem_info);
-    if (mem_info.header != nullptr && mem_info.buffer != nullptr && mem_info.size != 0) {
+    if (mem_info.buffer != nullptr && mem_info.size != 0) {
         // write data to path
+        LOG_D("write dirty data. size %d", mem_info.header->size);
         write(path_fd, mem_info.buffer + sizeof(buffer_header), mem_info.header->size);
         fsync(path_fd);
         munmap(mem_info.buffer, mem_info.size);
-        delete mem_info.header;
     }
 
     info->buffer_size = RESIZE(128);
     info->buffer_fd = buffer_fd;
     info->path_fd = path_fd;
     info->buffer = mmap_alloc(buffer_fd, info->buffer_size);
+
+    buffer_header header;
+    header.size = 0;
+    memcpy(header.magic, MAGIC_HEADER, sizeof(MAGIC_HEADER));
+    memcpy(info->buffer, &header, sizeof(buffer_header));
 
     return 0;
 }
@@ -73,7 +82,6 @@ u1 *mmap_alloc(int fd, size_t size) {
 }
 
 void read_dirty_data(int fd, mem_info *info) {
-    info->header = nullptr;
     info->buffer = nullptr;
     info->size = 0;
 
@@ -93,19 +101,18 @@ void read_dirty_data(int fd, mem_info *info) {
         return;
     }
 
-    int result = check_header(buffer, buffer_file_size);
+    int result = check_header(buffer, buffer_file_size, info->header);
     if (result != 0) {
         return;
     }
 
-    memcpy(info->header, buffer, sizeof(buffer_header));
     info->buffer = buffer;
     info->size = buffer_file_size;
 }
 
 void write_buffer(mmap_info *info, const u1 *data, size_t data_size) {
     // need to allocate more buffer
-    if (info->buffer_size <= data_size) {
+    if (info->buffer_size <= data_size + sizeof(buffer_header)) {
         u4 resize_size = RESIZE(info->buffer_size);
         ftruncate(info->buffer_fd, (off_t) resize_size);
         LOG_D("size %d, address %x", info->buffer_size, (u4) info->buffer);
@@ -131,7 +138,6 @@ void write_buffer(mmap_info *info, const u1 *data, size_t data_size) {
     }
 
     header.size = data_size;
-    info->buffer_size = data_size;
     memcpy(info->buffer, &header, sizeof(buffer_header));
     memcpy(info->buffer + sizeof(buffer_header), data, data_size);
 }

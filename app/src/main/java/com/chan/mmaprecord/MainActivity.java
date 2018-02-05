@@ -40,7 +40,10 @@ public class MainActivity extends AppCompatActivity {
 					mmapRecord.recycle(array);
 				}
 				String time = System.currentTimeMillis() + "";
-				mmapRecord.save((time + "|" + json).getBytes());
+				String content = (time + "|" + json);
+				Log.d("mmap_record", content);
+				Log.d("size", content.getBytes().length + "");
+				mmapRecord.save(content.getBytes());
 				textView.setText(time);
 			}
 		});

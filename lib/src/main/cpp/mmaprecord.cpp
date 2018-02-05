@@ -26,7 +26,6 @@ void set_mmap_info(JNIEnv *env, jobject object, void *ref) {
     env->SetLongField(object, reference_id, (jlong) ref);
 }
 
-
 JNIEXPORT jint JNICALL
 Java_com_chan_lib_MmapRecord_init(JNIEnv *env, jobject instance, jstring buffer, jstring log) {
     // open buffer
