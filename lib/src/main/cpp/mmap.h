@@ -46,9 +46,14 @@ public:
         header = new buffer_header;
         size = 0;
     }
+
     ~mem_info() {
         if (header != nullptr) {
             delete header;
+        }
+
+        if (buffer != nullptr) {
+            munmap(buffer, size);
         }
     }
 };
@@ -64,6 +69,8 @@ typedef struct {
 #define ERROR_INVALID_ARGUMENT -1
 #define ERROR_OPEN_BUFFER -2
 #define ERROR_OPEN_PATH -3
+#define ERROR_ALLOC_MMAP -4
+
 #define RESIZE(a) (((a) / PAGE_SIZE + 1) * PAGE_SIZE)
 
 

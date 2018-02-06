@@ -36,16 +36,19 @@ int check_header(const u1 *buffer, size_t size, buffer_header *header) {
 
 int open_buffer(const char *buffer_path, const char *path, mmap_info *info) {
     if (strlen(buffer_path) == 0 || strlen(path) == 0 || info == nullptr) {
+        LOG_D("open_buffer, invalid arguments");
         return ERROR_INVALID_ARGUMENT;
     }
 
     int buffer_fd = ::open(buffer_path, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (buffer_fd < 0) {
+        LOG_D("open buffer failed");
         return ERROR_OPEN_BUFFER;
     }
 
     int path_fd = ::open(path, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (path_fd < 0) {
+        LOG_D("open dest path failed");
         close(buffer_fd);
         return ERROR_OPEN_PATH;
     }
@@ -57,13 +60,16 @@ int open_buffer(const char *buffer_path, const char *path, mmap_info *info) {
         LOG_D("write dirty data. size %d", mem_info.header->size);
         write(path_fd, mem_info.buffer + sizeof(buffer_header), mem_info.header->size);
         fsync(path_fd);
-        munmap(mem_info.buffer, mem_info.size);
     }
 
     info->buffer_size = RESIZE(128);
     info->buffer_fd = buffer_fd;
     info->path_fd = path_fd;
     info->buffer = mmap_alloc(buffer_fd, info->buffer_size);
+    if (info->buffer == nullptr) {
+        LOG_D("mmap failed");
+        return ERROR_ALLOC_MMAP;
+    }
 
     buffer_header header;
     header.size = 0;
@@ -88,21 +94,26 @@ void read_dirty_data(int fd, mem_info *info) {
     // read dirty data
     struct stat buffer_file_stat;
     if (fstat(fd, &buffer_file_stat) < 0) {
+        LOG_D("read_dirty_data, has no dirty data");
         return;
     }
 
     size_t buffer_file_size = (size_t) buffer_file_stat.st_size;
     if (buffer_file_size < sizeof(buffer_header)) {
+        LOG_D("find dirty data, but size if less than buffer_header");
         return;
     }
 
     u1 *buffer = (u1 *) mmap(0, buffer_file_size, PROT_WRITE | PROT_READ, MAP_PRIVATE, fd, 0);
     if (buffer == MAP_FAILED) {
+        LOG_D("read dirty data");
         return;
     }
 
     int result = check_header(buffer, buffer_file_size, info->header);
     if (result != 0) {
+        LOG_D("invalid dirty data");
+        munmap(buffer, buffer_file_size);
         return;
     }
 
@@ -134,6 +145,7 @@ void write_buffer(mmap_info *info, const u1 *data, size_t data_size) {
     buffer_header header;
     int result = check_header(info->buffer, info->buffer_size, &header);
     if (result != 0) {
+        LOG_D("write_buffer, invalid header");
         return;
     }
 
