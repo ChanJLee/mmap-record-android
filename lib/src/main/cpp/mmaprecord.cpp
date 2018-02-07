@@ -109,6 +109,7 @@ Java_com_chan_lib_MmapRecord_flush(JNIEnv *env, jobject instance) {
     }
 
     u1 *data = info->buffer + sizeof(header);
+    lseek(info->path_fd, 0, SEEK_SET);
     write(info->path_fd, data, header.size);
     fsync(info->path_fd);
     header.size = 0;

@@ -46,7 +46,7 @@ int open_buffer(const char *buffer_path, const char *path, mmap_info *info) {
         return ERROR_OPEN_BUFFER;
     }
 
-    int path_fd = ::open(path, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    int path_fd = ::open(path, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (path_fd < 0) {
         LOG_D("open dest path failed");
         close(buffer_fd);
@@ -58,6 +58,7 @@ int open_buffer(const char *buffer_path, const char *path, mmap_info *info) {
     if (mem_info.buffer != nullptr && mem_info.size != 0) {
         // write data to path
         LOG_D("write dirty data. size %d", mem_info.header->size);
+        lseek(path_fd, 0, SEEK_SET);
         write(path_fd, mem_info.buffer + sizeof(buffer_header), mem_info.header->size);
         fsync(path_fd);
     }
@@ -83,7 +84,7 @@ u1 *mmap_alloc(int fd, size_t size) {
     ftruncate(fd, (off_t) size);
     lseek(fd, 0, SEEK_SET);
     size_t alloc_size = size;
-    u1 *map_ptr = (u1 *) mmap(0, alloc_size, PROT_WRITE | PROT_READ, MAP_PRIVATE, fd, 0);
+    u1 *map_ptr = (u1 *) mmap(0, alloc_size, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
     return map_ptr == MAP_FAILED ? nullptr : map_ptr;
 }
 
@@ -104,7 +105,7 @@ void read_dirty_data(int fd, mem_info *info) {
         return;
     }
 
-    u1 *buffer = (u1 *) mmap(0, buffer_file_size, PROT_WRITE | PROT_READ, MAP_PRIVATE, fd, 0);
+    u1 *buffer = (u1 *) mmap(0, buffer_file_size, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
     if (buffer == MAP_FAILED) {
         LOG_D("read dirty data");
         return;
@@ -150,6 +151,7 @@ void write_buffer(mmap_info *info, const u1 *data, size_t data_size) {
     }
 
     header.size = data_size;
+    LOG_D("header size: %d", header.size);
     memcpy(info->buffer, &header, sizeof(buffer_header));
     memcpy(info->buffer + sizeof(buffer_header), data, data_size);
 }
