@@ -6,6 +6,7 @@
 #define MMAPRECORD_MMAP_H
 
 #include <cwchar>
+#include <sys/mman.h>
 
 #ifdef __cplusplus
 extern "C" {
